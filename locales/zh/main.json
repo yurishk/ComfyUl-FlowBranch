@@ -1,0 +1,8 @@
+{
+  "FlowBranchPublish": "发送结果",
+  "FlowBranchGet": "读取结果",
+  "FlowBranchPipeline": "流程编排器",
+  "FlowBranchStage": "[旧版] 阶段开关",
+  "FlowBranchRoute": "[旧版] 多路方案",
+  "FlowBranchIf": "[旧版] 条件选择"
+}

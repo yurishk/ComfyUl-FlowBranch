@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ComfyUI-FlowBranch"
+version = "2.0.0"
+description = "Robust wireless channels and lazy branches for ComfyUI"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.comfy]
+PublisherId = "local"
+DisplayName = "Flow Branch"

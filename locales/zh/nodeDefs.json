@@ -1,0 +1,44 @@
+{
+  "FlowBranchPublish": {
+    "display_name": "发送结果",
+    "description": "给数据一个可读名称，供流程中的其他位置读取",
+    "inputs": {
+      "channel": {"name": "结果名称", "tooltip": "例如：原始图像、修脸后、最终图像"},
+      "value": {"name": "数据", "tooltip": "要发布的数据"}
+    },
+    "outputs": {
+      "0": {"name": "数据"}
+    }
+  },
+  "FlowBranchGet": {
+    "display_name": "读取结果",
+    "description": "读取发送结果或流程阶段发布的同名结果",
+    "inputs": {
+      "channel": {"name": "结果名称"},
+      "fallback": {"name": "找不到时使用", "tooltip": "没有同名结果时使用这个输入"}
+    },
+    "outputs": {
+      "0": {"name": "数据"}
+    }
+  },
+  "FlowBranchPipeline": {
+    "display_name": "流程编排器",
+    "description": "可无限添加阶段，每个阶段可无限添加处理方案，并且只执行选中的方案",
+    "inputs": {
+      "input_channel": {"name": "起点结果", "tooltip": "第一个阶段要读取的结果名称"},
+      "output_channel": {"name": "最终发布为", "tooltip": "整个流程完成后使用的结果名称"}
+    },
+    "outputs": {
+      "0": {"name": "流程结果"}
+    }
+  },
+  "FlowBranchStage": {
+    "display_name": "[旧版] 阶段开关"
+  },
+  "FlowBranchRoute": {
+    "display_name": "[旧版] 多路方案"
+  },
+  "FlowBranchIf": {
+    "display_name": "[旧版] 条件选择"
+  }
+}
