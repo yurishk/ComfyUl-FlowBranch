@@ -1,3 +1,5 @@
+import { tr } from "./i18n.mjs";
+
 export const PIPELINE_CONFIG_VERSION = 2;
 
 let idCounter = 0;
@@ -27,14 +29,14 @@ function cleanStageName(value, fallback) {
 export function createBranch(index = 1) {
   return {
     id: makeId("b"),
-    name: `方案 ${index}`,
+    name: tr(`方案 ${index}`, `Option ${index}`),
   };
 }
 
 export function createStage(index = 1) {
   return {
     id: makeId("s"),
-    name: `阶段 ${index} 结果`,
+    name: tr(`阶段 ${index} 结果`, `Stage ${index} Result`),
     enabled: true,
     autoSelect: false,
     selected: null,
@@ -60,7 +62,7 @@ export function normalizePipelineConfig(value) {
       const branchSource = rawBranch && typeof rawBranch === "object" ? rawBranch : {};
       return {
         id: cleanId(branchSource.id, "b", usedBranchIds),
-        name: cleanName(branchSource.name, `方案 ${branchIndex + 1}`),
+        name: cleanName(branchSource.name, tr(`方案 ${branchIndex + 1}`, `Option ${branchIndex + 1}`)),
       };
     });
     const selected = branches.some((item) => item.id === stageSource.selected)
@@ -68,7 +70,10 @@ export function normalizePipelineConfig(value) {
       : null;
     return {
       id: stageId,
-      name: cleanStageName(stageSource.name, `阶段 ${stageIndex + 1} 结果`),
+      name: cleanStageName(
+        stageSource.name,
+        tr(`阶段 ${stageIndex + 1} 结果`, `Stage ${stageIndex + 1} Result`),
+      ),
       enabled: stageSource.enabled !== false,
       autoSelect: stageSource.autoSelect === true,
       selected,

@@ -1,4 +1,5 @@
 import { branchInputName, parsePipelineConfig } from "./pipeline_config.mjs";
+import { tr } from "./i18n.mjs";
 
 export const NODE_TYPES = Object.freeze({
   publish: "FlowBranchPublish",
@@ -53,7 +54,10 @@ function addPublisher(publishers, channel, publisher) {
 
 function channelConflictMessage(channel, matches) {
   const ids = matches.map((item) => `#${item.id}`).join("、");
-  return `结果名称“${channel}”存在多个发布位置（${ids}），请改成唯一名称。`;
+  return tr(
+    `结果名称“${channel}”存在多个发布位置（${ids}），请改成唯一名称。`,
+    `Result name "${channel}" has multiple publishers (${ids}). Use a unique name.`,
+  );
 }
 
 function resolvePublisher(publishers, channel, consumerId, excludedPipelineId = null) {
@@ -178,7 +182,10 @@ function findLegacyCycleErrors(publishers) {
     while (dependencyByOutput.has(channel)) {
       if (positions.has(channel)) {
         const cycle = path.slice(positions.get(channel));
-        const message = `结果名称存在循环依赖：${[...cycle, channel].join(" → ")}`;
+        const message = tr(
+          `结果名称存在循环依赖：${[...cycle, channel].join(" → ")}`,
+          `Result names contain a dependency cycle: ${[...cycle, channel].join(" -> ")}`,
+        );
         for (const item of cycle) errors.set(dependencyByOutput.get(item).publisher.id, message);
         break;
       }
@@ -220,7 +227,7 @@ function makeGeneratedStage(pipeline, stage, stageIndex, expectedInput, sourceLi
     node: {
       class_type: NODE_TYPES.pipeline,
       inputs,
-      _meta: { title: `${pipeline.node._meta?.title || "流程编排器"} / ${stage.name}` },
+      _meta: { title: `${pipeline.node._meta?.title || tr("流程编排器", "Flow Orchestrator")} / ${stage.name}` },
     },
   };
 }
@@ -266,13 +273,15 @@ function compilePipeline(output, pipeline, publishers, diagnostics) {
 
   const startChannel = inputChannel(pipeline.node);
   const finalChannel = outputChannel(pipeline.node);
-  if (!startChannel) errors.push("起点结果名称不能为空。");
-  if (!finalChannel) errors.push("最终发布名称不能为空。");
+  if (!startChannel) errors.push(tr("起点结果名称不能为空。", "Starting result name cannot be empty."));
+  if (!finalChannel) errors.push(tr("最终发布名称不能为空。", "Final result name cannot be empty."));
 
   for (const stage of pipeline.config.stages) {
     const stageName = normalizeChannel(stage.name);
-    if (!stageName) errors.push("阶段结果名称不能为空。");
-    else if (stageNames.has(stageName)) errors.push(`阶段结果名称“${stageName}”重复。`);
+    if (!stageName) errors.push(tr("阶段结果名称不能为空。", "Stage result name cannot be empty."));
+    else if (stageNames.has(stageName)) {
+      errors.push(tr(`阶段结果名称“${stageName}”重复。`, `Duplicate stage result name: "${stageName}".`));
+    }
     stageNames.add(stageName);
   }
 
@@ -284,7 +293,10 @@ function compilePipeline(output, pipeline, publishers, diagnostics) {
   const start = resolvePublisher(publishers, startChannel, pipeline.id, pipeline.id);
   if (start.error) errors.push(start.error);
   else if (!start.link && startChannel) {
-    warnings.push(`起点结果“${startChannel}”本次没有可用数据，流程将保持为空。`);
+    warnings.push(tr(
+      `起点结果“${startChannel}”本次没有可用数据，流程将保持为空。`,
+      `Starting result "${startChannel}" has no data for this run; the pipeline remains empty.`,
+    ));
   }
 
   let previousLink = start.link;
@@ -312,12 +324,16 @@ function compilePipeline(output, pipeline, publishers, diagnostics) {
         if (available.length) {
           ({ branch: selectedBranch, link: selectedLink } = available[0]);
           if (available.length > 1) {
-            warnings.push(
+            warnings.push(tr(
               `阶段“${stage.name}”检测到多个可用方案，已按从上到下选择“${selectedBranch.name}”。`,
-            );
+              `Stage "${stage.name}" has multiple available options; selected "${selectedBranch.name}" from top to bottom.`,
+            ));
           }
         } else {
-          warnings.push(`阶段“${stage.name}”没有可用方案，将直接沿用上一阶段。`);
+          warnings.push(tr(
+            `阶段“${stage.name}”没有可用方案，将直接沿用上一阶段。`,
+            `Stage "${stage.name}" has no available option; using the previous stage result.`,
+          ));
         }
       } else if (stage.selected) {
         selectedBranch = stage.branches.find((item) => item.id === stage.selected) || null;
@@ -327,16 +343,19 @@ function compilePipeline(output, pipeline, publishers, diagnostics) {
       if (selectedBranch && selectedLink) {
         const upstreamChannels = collectUpstreamFlowChannels(output, selectedLink);
         if (!upstreamChannels.has(expectedInput)) {
-          stageErrors.push(
-            `阶段“${stage.name}”的方案“${selectedBranch.name}”必须读取上一阶段“${expectedInput}”，`
-            + "否则会跳过前面的处理。",
-          );
+          stageErrors.push(tr(
+            `阶段“${stage.name}”的方案“${selectedBranch.name}”必须读取上一阶段“${expectedInput}”，否则会跳过前面的处理。`,
+            `Option "${selectedBranch.name}" in stage "${stage.name}" must read the previous result "${expectedInput}" or it will skip earlier processing.`,
+          ));
         } else {
           generated.node.inputs.selected_value = selectedLink;
           generated.node.inputs.selected_name = selectedBranch.name;
         }
       } else if (!stage.autoSelect && stage.selected && !selectedLink) {
-        warnings.push(`阶段“${stage.name}”选中的方案未连接，将直接沿用上一阶段。`);
+        warnings.push(tr(
+          `阶段“${stage.name}”选中的方案未连接，将直接沿用上一阶段。`,
+          `The selected option in stage "${stage.name}" is not connected; using the previous stage result.`,
+        ));
       }
     }
     if (stageErrors.length) generated.node.inputs.compile_error = [...new Set(stageErrors)].join(" ");
@@ -358,13 +377,13 @@ function compilePipeline(output, pipeline, publishers, diagnostics) {
     diagnostics.push({
       nodeId: pipeline.id,
       level: "warning",
-      message: warnings[0] || "尚未添加阶段，将直接传递起点结果。",
+      message: warnings[0] || tr("尚未添加阶段，将直接传递起点结果。", "No stages added; passing through the starting result."),
     });
   } else {
     diagnostics.push({
       nodeId: pipeline.id,
       level: "ok",
-      message: `已编排 ${pipeline.config.stages.length} 个阶段。`,
+      message: tr(`已编排 ${pipeline.config.stages.length} 个阶段。`, `Compiled ${pipeline.config.stages.length} stages.`),
     });
   }
 }
@@ -383,18 +402,22 @@ function compileNamedConsumers(nodes, publishers, diagnostics) {
     }
     const channel = inputChannel(consumer.node);
     if (!channel) {
-      diagnostics.push({ nodeId: consumer.id, level: "warning", message: "读取结果名称为空。" });
+      diagnostics.push({ nodeId: consumer.id, level: "warning", message: tr("读取结果名称为空。", "Reader result name is empty.") });
       continue;
     }
     const resolved = resolvePublisher(publishers, channel, consumer.id);
     if (resolved.link) {
       inputs.source = resolved.link;
-      diagnostics.push({ nodeId: consumer.id, level: "ok", message: `已读取“${channel}”。` });
+      diagnostics.push({ nodeId: consumer.id, level: "ok", message: tr(`已读取“${channel}”。`, `Reading "${channel}".`) });
     } else if (resolved.error) {
       inputs.compile_error = resolved.error;
       diagnostics.push({ nodeId: consumer.id, level: "error", message: resolved.error });
     } else {
-      diagnostics.push({ nodeId: consumer.id, level: "warning", message: `找不到结果“${channel}”，运行时尝试回退。` });
+      diagnostics.push({
+        nodeId: consumer.id,
+        level: "warning",
+        message: tr(`找不到结果“${channel}”，运行时尝试回退。`, `Result "${channel}" was not found; trying the fallback at runtime.`),
+      });
     }
   }
 }

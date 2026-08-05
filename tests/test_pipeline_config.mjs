@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setFlowLocale } from "../web/i18n.mjs";
 
 import {
   branchInputName,
@@ -9,6 +10,8 @@ import {
   parsePipelineConfig,
   serializePipelineConfig,
 } from "../web/pipeline_config.mjs";
+
+setFlowLocale("zh-CN");
 
 test("configuration keeps an unlimited number of stages and branches", () => {
   const stages = Array.from({ length: 20 }, (_, stageIndex) => ({

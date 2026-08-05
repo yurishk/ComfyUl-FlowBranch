@@ -145,13 +145,13 @@ def test_public_defaults_use_readable_names_instead_of_g_numbers():
     get_default = FlowGet.INPUT_TYPES()["required"]["channel"][1]["default"]
     pipeline_required = FlowPipeline.INPUT_TYPES()["required"]
 
-    assert publish_default == "原始图像"
-    assert get_default == "原始图像"
-    assert pipeline_required["input_channel"][1]["default"] == "原始图像"
-    assert pipeline_required["output_channel"][1]["default"] == "最终图像"
+    assert publish_default == "Original Image"
+    assert get_default == "Original Image"
+    assert pipeline_required["input_channel"][1]["default"] == "Original Image"
+    assert pipeline_required["output_channel"][1]["default"] == "Final Image"
 
 
 def test_fixed_legacy_nodes_are_hidden_from_the_new_node_menu():
     for node_class in (FlowStage, FlowRoute, FlowIf):
         assert node_class.DEPRECATED is True
-        assert node_class.CATEGORY == "流程分支/旧版"
+        assert node_class.CATEGORY == "Flow Branch/Legacy"

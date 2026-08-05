@@ -1,0 +1,32 @@
+{
+  "FlowBranchPublish": {
+    "display_name": "Publish Result",
+    "description": "Publish data under a readable name for use elsewhere in the workflow",
+    "inputs": {
+      "channel": {"name": "Result name", "tooltip": "For example: Original Image, Retouched, Final Image"},
+      "value": {"name": "Data", "tooltip": "Data to publish"}
+    },
+    "outputs": {"0": {"name": "Data"}}
+  },
+  "FlowBranchGet": {
+    "display_name": "Read Result",
+    "description": "Read a publisher or pipeline stage with the same result name",
+    "inputs": {
+      "channel": {"name": "Result name"},
+      "fallback": {"name": "Fallback", "tooltip": "Used when no matching result is available"}
+    },
+    "outputs": {"0": {"name": "Data"}}
+  },
+  "FlowBranchPipeline": {
+    "display_name": "Flow Orchestrator",
+    "description": "Add unlimited stages and options while executing only the selected path",
+    "inputs": {
+      "input_channel": {"name": "Starting result", "tooltip": "Result name read by the first stage"},
+      "output_channel": {"name": "Publish final as", "tooltip": "Result name published by the completed pipeline"}
+    },
+    "outputs": {"0": {"name": "Pipeline result"}}
+  },
+  "FlowBranchStage": {"display_name": "[Legacy] Stage Switch"},
+  "FlowBranchRoute": {"display_name": "[Legacy] Multi-route"},
+  "FlowBranchIf": {"display_name": "[Legacy] Conditional Select"}
+}

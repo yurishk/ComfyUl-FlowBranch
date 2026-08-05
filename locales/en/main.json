@@ -1,0 +1,8 @@
+{
+  "FlowBranchPublish": "Publish Result",
+  "FlowBranchGet": "Read Result",
+  "FlowBranchPipeline": "Flow Orchestrator",
+  "FlowBranchStage": "[Legacy] Stage Switch",
+  "FlowBranchRoute": "[Legacy] Multi-route",
+  "FlowBranchIf": "[Legacy] Conditional Select"
+}

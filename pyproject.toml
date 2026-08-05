@@ -3,12 +3,24 @@ requires = ["setuptools>=70"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ComfyUI-FlowBranch"
+name = "flow-branch"
 version = "2.0.0"
-description = "Robust wireless channels and lazy branches for ComfyUI"
+description = "Named wireless results and an unlimited lazy stage orchestrator for ComfyUI"
+authors = [
+  {name = "yurishk"},
+]
+readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = []
+classifiers = [
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Repository = "https://github.com/yurishk/ComfyUl-FlowBranch"
+"Bug Tracker" = "https://github.com/yurishk/ComfyUl-FlowBranch/issues"
 
 [tool.comfy]
-PublisherId = "local"
+PublisherId = "yurishk"
 DisplayName = "Flow Branch"

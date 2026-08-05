@@ -5,6 +5,7 @@ import {
   parsePipelineConfig,
   serializePipelineConfig,
 } from "./pipeline_config.mjs";
+import { tr } from "./i18n.mjs";
 
 let editorCounter = 0;
 export const PIPELINE_NODE_MIN_WIDTH = 430;
@@ -199,7 +200,7 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     const enabled = element("input", "fb-stage-toggle");
     enabled.type = "checkbox";
     enabled.checked = stage.enabled;
-    enabled.title = stage.enabled ? "阶段已启用" : "阶段已旁路";
+    enabled.title = stage.enabled ? tr("阶段已启用", "Stage enabled") : tr("阶段已旁路", "Stage bypassed");
     enabled.addEventListener("change", () => {
       stage.enabled = enabled.checked;
       notify();
@@ -208,14 +209,14 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     const names = element("div", "fb-stage-names");
     const source = element("div", "fb-stage-source");
     source.append(
-      element("span", "fb-stage-index", `阶段 ${stageIndex + 1}`),
-      element("span", "fb-stage-path", `来自 ${previousName || "未命名结果"}`),
+      element("span", "fb-stage-index", tr(`阶段 ${stageIndex + 1}`, `Stage ${stageIndex + 1}`)),
+      element("span", "fb-stage-path", `${tr("来自", "From")} ${previousName || tr("未命名结果", "Unnamed result")}`),
     );
     const name = element("input", "fb-name-input");
     name.type = "text";
     name.value = stage.name;
-    name.placeholder = "阶段结果名称";
-    name.title = "该阶段完成后发布的结果名称";
+    name.placeholder = tr("阶段结果名称", "Stage result name");
+    name.title = tr("该阶段完成后发布的结果名称", "Result name published by this stage");
     name.addEventListener("input", () => {
       stage.name = name.value;
       persist();
@@ -225,21 +226,21 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     names.append(source, name);
 
     const actions = element("div", "fb-stage-actions");
-    const moveUp = iconButton("↑", "阶段上移", () => {
+    const moveUp = iconButton("↑", tr("阶段上移", "Move stage up"), () => {
       [config.stages[stageIndex - 1], config.stages[stageIndex]] = [
         config.stages[stageIndex], config.stages[stageIndex - 1],
       ];
       notify();
     });
     moveUp.disabled = stageIndex <= 0;
-    const moveDown = iconButton("↓", "阶段下移", () => {
+    const moveDown = iconButton("↓", tr("阶段下移", "Move stage down"), () => {
       [config.stages[stageIndex + 1], config.stages[stageIndex]] = [
         config.stages[stageIndex], config.stages[stageIndex + 1],
       ];
       notify();
     });
     moveDown.disabled = stageIndex >= config.stages.length - 1;
-    const removeStage = iconButton("×", "删除阶段", () => {
+    const removeStage = iconButton("×", tr("删除阶段", "Delete stage"), () => {
       config.stages.splice(stageIndex, 1);
       notify();
     });
@@ -262,8 +263,8 @@ export function setupPipelineEditor(node, app, onStateChanged) {
       stage.selected = null;
       notify();
     });
-    label.title = "不执行本阶段，直接使用上一阶段结果";
-    label.append(radio, element("span", "fb-bypass-label", "跳过本阶段"));
+    label.title = tr("不执行本阶段，直接使用上一阶段结果", "Skip this stage and use the previous result");
+    label.append(radio, element("span", "fb-bypass-label", tr("跳过本阶段", "Bypass this stage")));
     return label;
   }
 
@@ -273,15 +274,15 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     const toggle = element("input", "fb-auto-toggle");
     toggle.type = "checkbox";
     toggle.checked = stage.autoSelect;
-    toggle.title = "运行时按从上到下的顺序选择第一个可用方案";
+    toggle.title = tr("运行时按从上到下的顺序选择第一个可用方案", "At runtime, select the first available option from top to bottom");
     toggle.addEventListener("change", () => {
       stage.autoSelect = toggle.checked;
       notify();
     });
     label.append(
       toggle,
-      element("span", "fb-auto-label", "自动选择可用方案"),
-      element("span", "fb-auto-hint", "从上到下"),
+      element("span", "fb-auto-label", tr("自动选择可用方案", "Auto-select available option")),
+      element("span", "fb-auto-hint", tr("从上到下", "Top to bottom")),
     );
     return label;
   }
@@ -298,7 +299,7 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     radio.name = `${editorId}-${stage.id}`;
     radio.checked = stage.selected === branch.id;
     radio.disabled = !stage.enabled || stage.autoSelect;
-    radio.title = "选择这个方案";
+    radio.title = tr("选择这个方案", "Select this option");
     radio.addEventListener("change", () => {
       if (!radio.checked) return;
       stage.selected = branch.id;
@@ -308,8 +309,8 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     const name = element("input", "fb-name-input fb-branch-name");
     name.type = "text";
     name.value = branch.name;
-    name.placeholder = `方案 ${branchIndex + 1}`;
-    name.title = "方案名称";
+    name.placeholder = tr(`方案 ${branchIndex + 1}`, `Option ${branchIndex + 1}`);
+    name.title = tr("方案名称", "Option name");
     name.addEventListener("input", () => {
       branch.name = name.value;
       const input = nodeInput(node, inputName);
@@ -322,11 +323,13 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     const status = element(
       "span",
       `fb-connection-status ${connected ? "fb-is-connected" : "fb-is-unconnected"}`,
-      connected ? "已连接" : "未连接",
+      connected ? tr("已连接", "Connected") : tr("未连接", "Not connected"),
     );
-    status.title = connected ? "方案结果已连接" : "方案结果未连接，将沿用上一阶段";
+    status.title = connected
+      ? tr("方案结果已连接", "Option result connected")
+      : tr("方案结果未连接，将沿用上一阶段", "Not connected; the previous stage result will be used");
 
-    const remove = iconButton("×", "删除方案", () => {
+    const remove = iconButton("×", tr("删除方案", "Delete option"), () => {
       stage.branches.splice(branchIndex, 1);
       if (stage.selected === branch.id) stage.selected = null;
       notify();
@@ -349,7 +352,7 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     for (const [branchIndex, branch] of stage.branches.entries()) {
       section.append(makeBranchRow(stage, branch, branchIndex));
     }
-    const addBranch = element("button", "fb-add-button fb-add-branch", "+ 添加方案");
+    const addBranch = element("button", "fb-add-button fb-add-branch", tr("+ 添加方案", "+ Add option"));
     addBranch.type = "button";
     addBranch.addEventListener("click", () => {
       const branch = createBranch(stage.branches.length + 1);
@@ -365,14 +368,15 @@ export function setupPipelineEditor(node, app, onStateChanged) {
     rowElements = new Map();
     root.replaceChildren();
     if (config.stages.length === 0) {
-      root.append(element("div", "fb-empty-state", "尚未添加处理阶段"));
+      root.append(element("div", "fb-empty-state", tr("尚未添加处理阶段", "No processing stages yet")));
     }
-    let previousName = node.widgets?.find((item) => item.name === "input_channel")?.value || "原始图像";
+    let previousName = node.widgets?.find((item) => item.name === "input_channel")?.value
+      || tr("原始图像", "Original Image");
     for (const [stageIndex, stage] of config.stages.entries()) {
       root.append(makeStage(stage, stageIndex, previousName));
       previousName = stage.name;
     }
-    const addStage = element("button", "fb-add-button fb-add-stage", "+ 添加阶段");
+    const addStage = element("button", "fb-add-button fb-add-stage", tr("+ 添加阶段", "+ Add stage"));
     addStage.type = "button";
     addStage.addEventListener("click", () => {
       const stage = createStage(config.stages.length + 1);

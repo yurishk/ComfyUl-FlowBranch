@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { compileFlowPrompt, generatedStageNodeId } from "../web/compiler.mjs";
+import { setFlowLocale } from "../web/i18n.mjs";
 import { branchInputName } from "../web/pipeline_config.mjs";
+
+setFlowLocale("zh-CN");
 
 function node(classType, inputs) {
   return { class_type: classType, inputs: { ...inputs } };

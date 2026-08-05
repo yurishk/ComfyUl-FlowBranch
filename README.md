@@ -1,4 +1,36 @@
-# ComfyUI-FlowBranch
+# Flow Branch
+
+Named wireless results and an unlimited lazy stage orchestrator for robust ComfyUI workflows.
+
+## Nodes
+
+- **Publish Result** gives any data a readable result name.
+- **Read Result** retrieves a named result anywhere in the workflow, with an optional fallback.
+- **Flow Orchestrator** manages unlimited sequential stages and unlimited alternatives per stage. Only the selected usable alternative becomes an execution dependency.
+
+Legacy Stage Switch, Multi-route, and Conditional Select nodes remain loadable for old workflows but are hidden from the add-node menu.
+
+## Quick Example
+
+For generation, optional face restoration, and one of several upscalers:
+
+1. Connect the generated image to **Publish Result** and name it `Original Image`.
+2. Add a stage to **Flow Orchestrator**, name its result `Face Restored`, then connect `Read Result (Original Image) -> face restoration -> stage option`.
+3. Add another stage named `Upscaled`. Add as many options as needed and connect each from `Read Result (Face Restored)` through its own upscaler to an option socket.
+4. Enable **Auto-select available option** to choose the first connected, non-bypassed option from top to bottom.
+5. Use the orchestrator output directly or read its final published name elsewhere.
+
+If a stage is disabled, skipped, unconnected, or has no available automatic option, it passes the previous stage result through. The compiler validates that a selected option actually reads the preceding stage, preventing later processing from accidentally bypassing an unfinished earlier stage.
+
+All stage configuration is stored in normal workflow data. Save/reload, workflow switching, and node duplication preserve stages, options, ordering, switches, selections, and dynamic sockets.
+
+## Installation
+
+Install `flow-branch` from ComfyUI Manager, or clone this repository into `ComfyUI/custom_nodes` and restart ComfyUI. The UI supports English and Simplified Chinese.
+
+---
+
+## 中文说明
 
 用于多阶段图像处理的无线结果与惰性流程编排节点。节点位于 **流程分支** 分类。
 

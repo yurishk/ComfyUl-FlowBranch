@@ -12,8 +12,8 @@ class AnyType(str):
 
 ANY = AnyType("*")
 MISSING = object()
-CATEGORY = "流程分支"
-LEGACY_CATEGORY = "流程分支/旧版"
+CATEGORY = "Flow Branch"
+LEGACY_CATEGORY = "Flow Branch/Legacy"
 
 
 class FlexibleOptionalInputType(dict):
@@ -31,7 +31,7 @@ class FlexibleOptionalInputType(dict):
 
 
 def _blocked(message: str):
-    return (ExecutionBlocker(f"[流程分支] {message}"),)
+    return (ExecutionBlocker(f"[Flow Branch] {message}"),)
 
 
 def _compile_error(error: str):
@@ -44,9 +44,9 @@ class FlowPublish:
         return {
             "required": {
                 "channel": ("STRING", {
-                    "default": "原始图像",
+                    "default": "Original Image",
                     "multiline": False,
-                    "tooltip": "结果名称。同一工作流中每个名称只能有一个发布位置。",
+                    "tooltip": "A unique result name used elsewhere in the workflow.",
                 }),
             },
             "optional": {
@@ -55,15 +55,16 @@ class FlowPublish:
         }
 
     RETURN_TYPES = (ANY,)
-    RETURN_NAMES = ("值",)
+    RETURN_NAMES = ("value",)
     FUNCTION = "publish"
     CATEGORY = CATEGORY
-    DESCRIPTION = "给任意类型数据一个可读名称；只有被读取时才参与执行。"
+    DESCRIPTION = "Publish any data under a readable name. It executes only when consumed."
 
     @classmethod
     def publish(cls, channel: str, value=MISSING):
         if value is MISSING:
-            return _blocked(f"发送结果“{channel.strip() or '(空名称)'}”没有输入数据。")
+            name = channel.strip() or "(empty name)"
+            return _blocked(f"Published result '{name}' has no input data. / 发送结果“{name}”没有输入数据。")
         return (value,)
 
 
@@ -73,9 +74,9 @@ class FlowGet:
         return {
             "required": {
                 "channel": ("STRING", {
-                    "default": "原始图像",
+                    "default": "Original Image",
                     "multiline": False,
-                    "tooltip": "读取同名发送结果或流程阶段结果。",
+                    "tooltip": "Read a publisher or pipeline stage with the same result name.",
                 }),
             },
             "optional": {
@@ -86,10 +87,10 @@ class FlowGet:
         }
 
     RETURN_TYPES = (ANY,)
-    RETURN_NAMES = ("值",)
+    RETURN_NAMES = ("value",)
     FUNCTION = "get"
     CATEGORY = CATEGORY
-    DESCRIPTION = "读取命名结果；找不到时可使用回退输入。"
+    DESCRIPTION = "Read a named result, with an optional fallback when it is unavailable."
 
     @classmethod
     def check_lazy_status(cls, channel: str, fallback=MISSING, source=MISSING, compile_error: str = ""):
@@ -110,7 +111,11 @@ class FlowGet:
             return (source,)
         if fallback is not MISSING:
             return (fallback,)
-        return _blocked(f"读取结果“{channel.strip() or '(空名称)'}”找不到发布位置，也没有连接回退输入。")
+        name = channel.strip() or "(empty name)"
+        return _blocked(
+            f"Result '{name}' has no publisher or fallback. / "
+            f"读取结果“{name}”找不到发布位置，也没有连接回退输入。"
+        )
 
 
 class FlowPipeline:
@@ -131,14 +136,14 @@ class FlowPipeline:
         return {
             "required": {
                 "input_channel": ("STRING", {
-                    "default": "原始图像",
+                    "default": "Original Image",
                     "multiline": False,
-                    "tooltip": "第一个阶段读取的结果名称。",
+                    "tooltip": "Result name read by the first stage.",
                 }),
                 "output_channel": ("STRING", {
-                    "default": "最终图像",
+                    "default": "Final Image",
                     "multiline": False,
-                    "tooltip": "整个流程完成后发布的结果名称。",
+                    "tooltip": "Result name published when the pipeline finishes.",
                 }),
                 "pipeline_config": ("STRING", {
                     "default": cls.EMPTY_CONFIG,
@@ -152,10 +157,10 @@ class FlowPipeline:
         }
 
     RETURN_TYPES = (ANY,)
-    RETURN_NAMES = ("流程结果",)
+    RETURN_NAMES = ("pipeline_result",)
     FUNCTION = "select"
     CATEGORY = CATEGORY
-    DESCRIPTION = "可无限添加阶段和方案的惰性流程编排器。"
+    DESCRIPTION = "A lazy orchestrator with unlimited stages and options."
 
     @classmethod
     def check_lazy_status(cls, input_channel: str, output_channel: str, pipeline_config: str,
@@ -187,13 +192,17 @@ class FlowPipeline:
                 return (selected_value,)
             if source is not MISSING:
                 return (source,)
-            stage_name = kwargs.get("stage_name") or output_channel or "未命名阶段"
-            return _blocked(f"阶段“{stage_name}”找不到上一阶段结果。")
+            stage_name = kwargs.get("stage_name") or output_channel or "unnamed stage"
+            return _blocked(
+                f"Stage '{stage_name}' cannot find its previous result. / "
+                f"阶段“{stage_name}”找不到上一阶段结果。"
+            )
         if pipeline_result is not MISSING:
             return (pipeline_result,)
         if source is not MISSING:
             return (source,)
-        return _blocked(f"流程找不到起点结果“{input_channel.strip() or '(空名称)'}”。")
+        name = input_channel.strip() or "(empty name)"
+        return _blocked(f"Pipeline cannot find starting result '{name}'. / 流程找不到起点结果“{name}”。")
 
 
 class FlowStage:
@@ -394,10 +403,10 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "FlowBranchPublish": "发送结果",
-    "FlowBranchGet": "读取结果",
-    "FlowBranchPipeline": "流程编排器",
-    "FlowBranchStage": "[旧版] 阶段开关",
-    "FlowBranchRoute": "[旧版] 多路方案",
-    "FlowBranchIf": "[旧版] 条件选择",
+    "FlowBranchPublish": "Publish Result",
+    "FlowBranchGet": "Read Result",
+    "FlowBranchPipeline": "Flow Orchestrator",
+    "FlowBranchStage": "[Legacy] Stage Switch",
+    "FlowBranchRoute": "[Legacy] Multi-route",
+    "FlowBranchIf": "[Legacy] Conditional Select",
 }

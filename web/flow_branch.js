@@ -1,9 +1,12 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { compileFlowPrompt, NODE_TYPES, normalizeChannel } from "./compiler.mjs";
+import { isChinese, setFlowLocale, tr } from "./i18n.mjs";
 import { nextAvailablePairedPosition, uniquePublisherNode } from "./node_actions.mjs";
 import { parsePipelineConfig } from "./pipeline_config.mjs";
 import { PIPELINE_NODE_MIN_WIDTH, setupPipelineEditor } from "./pipeline_editor.js";
+
+setFlowLocale(app.ui?.settings?.getSettingValue?.("Comfy.Locale") || navigator.language || "en");
 
 const FLOW_TYPES = new Set(Object.values(NODE_TYPES));
 const LEGACY_PUBLISHERS = new Set([NODE_TYPES.legacyStage, NODE_TYPES.legacyRoute]);
@@ -21,28 +24,28 @@ const INTERNAL_WIDGETS = [
   "__flow_generated",
 ];
 const LABELS = {
-  channel: "结果名称",
-  value: "数据",
-  fallback: "找不到时使用",
-  input_channel: "起点结果",
-  output_channel: "最终发布为",
-  enabled: "启用阶段",
-  processed: "处理结果",
-  route: "选择方案",
-  option_1: "方案 1 结果",
-  option_2: "方案 2 结果",
-  option_3: "方案 3 结果",
-  condition: "条件",
-  on_true: "为真时",
-  on_false: "为假时",
+  channel: tr("结果名称", "Result name"),
+  value: tr("数据", "Data"),
+  fallback: tr("找不到时使用", "Fallback"),
+  input_channel: tr("起点结果", "Starting result"),
+  output_channel: tr("最终发布为", "Publish final as"),
+  enabled: tr("启用阶段", "Enable stage"),
+  processed: tr("处理结果", "Processed result"),
+  route: tr("选择方案", "Select option"),
+  option_1: tr("方案 1 结果", "Option 1 result"),
+  option_2: tr("方案 2 结果", "Option 2 result"),
+  option_3: tr("方案 3 结果", "Option 3 result"),
+  condition: tr("条件", "Condition"),
+  on_true: tr("为真时", "If true"),
+  on_false: tr("为假时", "If false"),
 };
 const OUTPUT_LABELS = {
-  [NODE_TYPES.publish]: "数据",
-  [NODE_TYPES.get]: "数据",
-  [NODE_TYPES.pipeline]: "流程结果",
-  [NODE_TYPES.legacyStage]: "阶段结果",
-  [NODE_TYPES.legacyRoute]: "选择结果",
-  [NODE_TYPES.legacyIf]: "选择结果",
+  [NODE_TYPES.publish]: tr("数据", "Data"),
+  [NODE_TYPES.get]: tr("数据", "Data"),
+  [NODE_TYPES.pipeline]: tr("流程结果", "Pipeline result"),
+  [NODE_TYPES.legacyStage]: tr("阶段结果", "Stage result"),
+  [NODE_TYPES.legacyRoute]: tr("选择结果", "Selected result"),
+  [NODE_TYPES.legacyIf]: tr("选择结果", "Selected result"),
 };
 let refreshPending = false;
 
@@ -97,7 +100,7 @@ function hideInternalControls(node) {
   for (const name of INTERNAL_WIDGETS) hideWidget(widget(node, name));
 }
 
-function applyChineseLabels(node) {
+function applyLocalizedLabels(node) {
   for (const item of node.widgets || []) {
     if (LABELS[item.name]) item.label = LABELS[item.name];
   }
@@ -196,7 +199,7 @@ function pipelineReaderMenu(node) {
     const channel = normalizeChannel(stage.name);
     if (!channel) continue;
     options.push({
-      content: `阶段 ${index + 1}：${channel}`,
+      content: tr(`阶段 ${index + 1}：${channel}`, `Stage ${index + 1}: ${channel}`),
       callback: () => createReaderNode(node, channel),
     });
   }
@@ -204,7 +207,7 @@ function pipelineReaderMenu(node) {
   if (finalChannel) {
     if (options.length) options.push(null);
     options.push({
-      content: `最终结果：${finalChannel}`,
+      content: tr(`最终结果：${finalChannel}`, `Final result: ${finalChannel}`),
       callback: () => createReaderNode(node, finalChannel),
     });
   }
@@ -216,14 +219,14 @@ function flowNodeMenuItems(node) {
   if (type === NODE_TYPES.publish) {
     const channel = channelFor(node, "out");
     return channel ? [{
-      content: `创建配对读取：${channel}`,
+      content: tr(`创建配对读取：${channel}`, `Create paired reader: ${channel}`),
       callback: () => createReaderNode(node, channel),
     }] : [];
   }
   if (type === NODE_TYPES.pipeline) {
     const options = pipelineReaderMenu(node);
     return options.length ? [{
-      content: "创建结果读取节点",
+      content: tr("创建结果读取节点", "Create result reader"),
       has_submenu: true,
       submenu: { options },
     }] : [];
@@ -231,7 +234,7 @@ function flowNodeMenuItems(node) {
   if (type === NODE_TYPES.get) {
     const publisher = publisherForReader(node);
     return publisher ? [{
-      content: "跳转到发送位置",
+      content: tr("跳转到发送位置", "Go to publisher"),
       callback: () => jumpToNode(publisher),
     }] : [];
   }
@@ -243,14 +246,16 @@ function diagnosePublishers(nodes, publishers) {
     const type = nodeType(node);
     if (type === NODE_TYPES.publish) {
       const channel = channelFor(node, "out");
-      if (!channel) setStatus(node, "warning", "结果名称为空");
-      else if (!publisherHasValue(node)) setStatus(node, "warning", `未接数据 ${channel}`);
+      if (!channel) setStatus(node, "warning", tr("结果名称为空", "Empty result name"));
+      else if (!publisherHasValue(node)) setStatus(node, "warning", tr(`未接数据 ${channel}`, `No data: ${channel}`));
       else {
         const matches = publishers.get(channel) || [];
         setStatus(
           node,
           matches.length > 1 ? "error" : "ok",
-          matches.length > 1 ? `名称冲突 ${channel}` : `发布 ${channel}`,
+          matches.length > 1
+            ? tr(`名称冲突 ${channel}`, `Name conflict: ${channel}`)
+            : tr(`发布 ${channel}`, `Publish: ${channel}`),
         );
       }
     }
@@ -263,19 +268,19 @@ function diagnosePipeline(node, publishers) {
   const finalName = channelFor(node, "out");
   const names = config.stages.map((stage) => normalizeChannel(stage.name));
   const duplicate = names.find((name, index) => name && names.indexOf(name) !== index);
-  if (!start) setStatus(node, "error", "起点名称为空");
-  else if (!finalName) setStatus(node, "error", "最终名称为空");
-  else if (names.some((name) => !name)) setStatus(node, "error", "阶段名称为空");
-  else if (duplicate) setStatus(node, "error", `阶段重名 ${duplicate}`);
+  if (!start) setStatus(node, "error", tr("起点名称为空", "Empty starting result"));
+  else if (!finalName) setStatus(node, "error", tr("最终名称为空", "Empty final result"));
+  else if (names.some((name) => !name)) setStatus(node, "error", tr("阶段名称为空", "Empty stage name"));
+  else if (duplicate) setStatus(node, "error", tr(`阶段重名 ${duplicate}`, `Duplicate stage: ${duplicate}`));
   else {
     const ownNames = new Set([...names, finalName]);
     const conflict = [...ownNames].find((name) => (publishers.get(name) || []).length > 1);
     const sources = (publishers.get(start) || []).filter((item) => item.node !== node);
-    if (conflict) setStatus(node, "error", `名称冲突 ${conflict}`);
-    else if (sources.length === 0) setStatus(node, "warning", `缺少起点 ${start}`);
-    else if (sources.length > 1) setStatus(node, "error", `起点冲突 ${start}`);
-    else if (config.stages.length === 0) setStatus(node, "warning", "尚未添加阶段");
-    else setStatus(node, "ok", `${config.stages.length} 个阶段`);
+    if (conflict) setStatus(node, "error", tr(`名称冲突 ${conflict}`, `Name conflict: ${conflict}`));
+    else if (sources.length === 0) setStatus(node, "warning", tr(`缺少起点 ${start}`, `Missing start: ${start}`));
+    else if (sources.length > 1) setStatus(node, "error", tr(`起点冲突 ${start}`, `Start conflict: ${start}`));
+    else if (config.stages.length === 0) setStatus(node, "warning", tr("尚未添加阶段", "No stages yet"));
+    else setStatus(node, "ok", tr(`${config.stages.length} 个阶段`, `${config.stages.length} stages`));
   }
 }
 
@@ -284,24 +289,24 @@ function diagnoseConsumer(node, publishers) {
   if (type !== NODE_TYPES.get && !LEGACY_CONSUMERS.has(type)) return;
   const channel = channelFor(node, "in");
   const matches = (publishers.get(channel) || []).filter((item) => item.node !== node);
-  if (!channel) setHigherPriorityStatus(node, "warning", "读取名称为空");
-  else if (matches.length === 1) setHigherPriorityStatus(node, "ok", `读取 ${channel}`);
-  else if (matches.length > 1) setHigherPriorityStatus(node, "error", `名称冲突 ${channel}`);
-  else setHigherPriorityStatus(node, "warning", `未找到 ${channel}`);
+  if (!channel) setHigherPriorityStatus(node, "warning", tr("读取名称为空", "Empty reader name"));
+  else if (matches.length === 1) setHigherPriorityStatus(node, "ok", tr(`读取 ${channel}`, `Read: ${channel}`));
+  else if (matches.length > 1) setHigherPriorityStatus(node, "error", tr(`名称冲突 ${channel}`, `Name conflict: ${channel}`));
+  else setHigherPriorityStatus(node, "warning", tr(`未找到 ${channel}`, `Not found: ${channel}`));
 }
 
 function refreshDiagnostics() {
   refreshPending = false;
   const allNodes = (app.graph?._nodes || []).filter((node) => FLOW_TYPES.has(nodeType(node)));
   const nodes = allNodes.filter((node) => !INACTIVE_MODES.has(node.mode));
-  for (const node of allNodes) setStatus(node, "idle", "已停用");
-  for (const node of nodes) setStatus(node, "idle", "待检查");
+  for (const node of allNodes) setStatus(node, "idle", tr("已停用", "Inactive"));
+  for (const node of nodes) setStatus(node, "idle", tr("待检查", "Pending"));
   const publishers = registerLivePublishers(nodes);
   diagnosePublishers(nodes, publishers);
   for (const node of nodes) {
     if (nodeType(node) === NODE_TYPES.pipeline) diagnosePipeline(node, publishers);
     diagnoseConsumer(node, publishers);
-    if (nodeType(node) === NODE_TYPES.legacyIf) setStatus(node, "idle", "旧版节点");
+    if (nodeType(node) === NODE_TYPES.legacyIf) setStatus(node, "idle", tr("旧版节点", "Legacy node"));
   }
   app.graph?.setDirtyCanvas(true, true);
 }
@@ -338,7 +343,7 @@ function fitStatusText(ctx, text, maxWidth) {
 
 function setupNode(node, reload = false) {
   hideInternalControls(node);
-  applyChineseLabels(node);
+  applyLocalizedLabels(node);
   const minWidth = nodeType(node) === NODE_TYPES.pipeline ? PIPELINE_NODE_MIN_WIDTH : 250;
   node.setSize([Math.max(node.size[0], minWidth), node.size[1]]);
 
@@ -429,7 +434,7 @@ function installPromptCompiler() {
       const warnings = diagnostics.filter((item) => item.level !== "ok");
       if (warnings.length) console.warn("[FlowBranch]", warnings);
     } catch (error) {
-      console.error("[FlowBranch] 编译流程失败", error);
+      console.error(tr("[FlowBranch] 编译流程失败", "[FlowBranch] Failed to compile flow"), error);
     }
     return originalQueuePrompt.apply(this, arguments);
   };
@@ -449,9 +454,25 @@ app.registerExtension({
   },
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (!FLOW_TYPES.has(nodeData.name)) return;
+    if (isChinese()) {
+      nodeData.category = String(nodeData.category || "")
+        .replace(/^Flow Branch/, "流程分支")
+        .replace(/\/Legacy$/, "/旧版");
+    }
     const originalCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function () {
       originalCreated?.apply(this, arguments);
+      if (isChinese()) {
+        const defaults = {
+          channel: { "Original Image": "原始图像" },
+          input_channel: { "Original Image": "原始图像", "Previous Stage": "上一阶段" },
+          output_channel: { "Final Image": "最终图像", "Current Stage": "本阶段" },
+        };
+        for (const [name, mapping] of Object.entries(defaults)) {
+          const item = widget(this, name);
+          if (item && mapping[item.value]) item.value = mapping[item.value];
+        }
+      }
       setupNode(this);
     };
     if (nodeData.name === NODE_TYPES.pipeline) {
