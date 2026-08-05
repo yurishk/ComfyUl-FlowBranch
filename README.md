@@ -1,6 +1,12 @@
 # Flow Branch
 
+**English** | [简体中文](#简体中文)
+
+## English
+
 Named wireless results and an unlimited lazy stage orchestrator for robust ComfyUI workflows.
+
+![Flow Branch workflow example](https://sywb.top/Staticfiles/pic/FlowBranch.png)
 
 ## Nodes
 
@@ -24,13 +30,46 @@ If a stage is disabled, skipped, unconnected, or has no available automatic opti
 
 All stage configuration is stored in normal workflow data. Save/reload, workflow switching, and node duplication preserve stages, options, ordering, switches, selections, and dynamic sockets.
 
+## Stage Behavior
+
+| Action | Result |
+| --- | --- |
+| Disable a stage | Runs none of its options and passes through the previous result |
+| Select **Bypass this stage** | Keeps the stage enabled but performs no processing for this run |
+| Selected option is not connected | Passes through the previous result and shows a warning |
+| Selected option is connected | Executes only that option |
+| Enable **Auto-select available option** | Picks the first available option from top to bottom; passes through if none are available |
+| Multiple automatic options are available | Picks only the highest option and reports the choice |
+| Starting result or every input is bypassed | Treats missing links as unconnected so unrelated optional inputs can keep running |
+| Delete an option or stage | Safely removes its dynamic socket and link |
+
+## Order Protection
+
+Each stage header shows the previous named result it must read. A processing option must begin with a **Read Result** node using that exact name. If an upscaling option reads `Original Image` when it should read `Face Restored`, the compiler stops that path with a clear error instead of silently skipping face restoration.
+
+When controlling automatic options with group Bypass (`Ctrl+B`), keep the option's final **Publish Result** node in the same group. Bypassing the group then removes that named result from the queued prompt, allowing automatic selection to correctly treat the option as unavailable.
+
+A missing **Read Result** publisher with no fallback is removed from the queued prompt like an unconnected optional input. Ordinary nodes may continue when that input is optional, while ComfyUI still reports its normal missing-input error for required inputs. Duplicate names, dependency cycles, and invalid stage order remain explicit configuration errors.
+
+At queue time, the visible plan is compiled into real ComfyUI lazy execution dependencies. The implementation uses no Python global state, does not depend on node placement order, and does not reserialize the workflow or alter random-seed widgets.
+
+## Persistence and Shortcuts
+
+Stages, options, names, ordering, switches, current selection, and dynamic input IDs are ordinary node workflow data. Saving, reloading, switching workflows, and duplicating the node preserve all of them without browser storage or sidecar files.
+
+- Right-click **Publish Result** and choose **Create Paired Reader** to add a matching reader on its right.
+- Right-click **Flow Orchestrator** and choose **Create Result Reader** for any stage or final result.
+- Right-click **Read Result** and choose **Go to Publisher**, or double-click it, to navigate to its unique publisher. Navigation refuses to guess when names conflict.
+
 ## Installation
 
 Install `flow-branch` from ComfyUI Manager, or clone this repository into `ComfyUI/custom_nodes` and restart ComfyUI. The UI supports English and Simplified Chinese.
 
 ---
 
-## 中文说明
+## 简体中文
+
+[English](#english) | **简体中文**
 
 用于多阶段图像处理的无线结果与惰性流程编排节点。节点位于 **流程分支** 分类。
 
