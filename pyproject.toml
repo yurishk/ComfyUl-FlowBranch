@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flow-branch"
-version = "2.0.1"
+version = "2.0.2"
 description = "Named wireless results and an unlimited lazy stage orchestrator for ComfyUI"
 authors = [
   {name = "yurishk"},
@@ -24,3 +24,4 @@ Repository = "https://github.com/yurishk/ComfyUl-FlowBranch"
 [tool.comfy]
 PublisherId = "yurishk"
 DisplayName = "Flow Branch"
+Icon = "https://sywb.top/Staticfiles/pic/FlowBranch-preview.png"

@@ -1,6 +1,6 @@
 # Flow Branch
 
-**English** | [简体中文](#简体中文)
+English | [简体中文](#简体中文)
 
 ## English
 
@@ -69,7 +69,7 @@ Install `flow-branch` from ComfyUI Manager, or clone this repository into `Comfy
 
 ## 简体中文
 
-[English](#english) | **简体中文**
+[English](#english) | 简体中文
 
 用于多阶段图像处理的无线结果与惰性流程编排节点。节点位于 **流程分支** 分类。
 
